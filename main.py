@@ -46,33 +46,30 @@ def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos
         
     return tareas, recursos
 
+def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[str]:
     # hacer estrategia LTP (Longest Task First) para minimizar el makespan
-
     tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
-    
+    # otra opcion es usar SPT (Shortest Processing Time) para minimizar el tiempo
+    # tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion)
     asignaciones: List[str] = []
-    
     for t in tareas_ordenadas:
-        # Filtrar recursos que soportan la categoría de la tarea
-        recursos_compatibles = [r for r in recursos if t.categoria in r.categorias_soportadas]
-        
-        if not recursos_compatibles:
+        usables = [r for r in recursos if t.categoria in r.categorias_soportadas]
+        if not usables:
             print(f"Advertencia: No hay recursos compatibles para la tarea {t.id} ({t.categoria})")
             continue
-            
-        # De los compatibles, elegir el que esté libre más temprano (minimiza tiempo de espera)
-        recurso_elegido = min(recursos_compatibles, key=lambda r: r.tiempo_disponible)
-        
-        inicio = recurso_elegido.tiempo_disponible
+
+        elegido = min(usables, key=lambda r: r.tiempo_disponible)
+        inicio = elegido.tiempo_disponible
         fin = inicio + t.duracion
-        
-        # Guardar resultado (ID Tarea, ID Recurso, Inicio, Fin)
-        asignaciones.append(f"{t.id},{recurso_elegido.id},{inicio},{fin}")
-        
-        # Actualizar disponibilidad del recurso (Exclusividad)
-        recurso_elegido.tiempo_disponible = fin
-        
+
+#actualizar el recurso 
+        elegido.tiempo_disponible = fin
+        asignaciones.append(f"{t.id},{elegido.id},{inicio},{fin}")
     return asignaciones
+
+
+
+ 
 
 
 def guardar_resultados(ruta: str, resultado: List[str]) -> int:
