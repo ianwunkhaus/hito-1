@@ -2,7 +2,7 @@ import sys
 import csv
 from typing import List, Dict, Set, Tuple
 from dataclasses import dataclass
-
+#ariel revisra: ltp, main, giardadp, codigo encoding, revision general
 @dataclass
 class Tarea:
     id: str
@@ -16,7 +16,7 @@ class Recurso:
     tiempo_disponible: int = 0  
 
 def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos.txt') -> Tuple[List[Tarea], List[Recurso]]:
-    """Lee los archivos de entrada y retorna las listas de objetos."""
+    #Lee los archivos de entrada y retorna las listas de objetos
     tareas: List[Tarea] = []
     recursos: List[Recurso] = []
     
@@ -48,9 +48,9 @@ def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos
 
 def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[str]:
     # hacer estrategia LTP (Longest Task First) para minimizar el makespan
+    #ariel revisar opciones de ltp
     tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
-    # otra opcion es usar SPT (Shortest Processing Time) para minimizar el tiempo
-    # tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion)
+
     asignaciones: List[str] = []
     for t in tareas_ordenadas:
         usables = [r for r in recursos if t.categoria in r.categorias_soportadas]
@@ -69,10 +69,11 @@ def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[st
 
 
 
- 
+
 
 
 def guardar_resultados(ruta: str, resultado: List[str]) -> int:
+    #ariel revisar opciones de guardado
     makespan_max = 0
     with open(ruta, 'w', encoding='utf-8') as f:
         for linea in resultado:
@@ -84,6 +85,7 @@ def guardar_resultados(ruta: str, resultado: List[str]) -> int:
     return makespan_max
     
 def main() -> None:
+    #ariel revisar opciones de main
     # El programa debe recibir el makespan_objetivo como argumento
     if len(sys.argv) < 2:
         print("Uso: python main.py <makespan_objetivo>")
