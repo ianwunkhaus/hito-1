@@ -1,40 +1,38 @@
 import sys
 import csv
 from typing import List, Dict, Set, Tuple
+from dataclasses import dataclass
 
-# 1. Definición de Clases con Tipado Estático (Requisito mypy)
+@dataclass
 class Tarea:
-    def __init__(self, id_t: str, duracion: int, categoria: str):
-        self.id = id_t
-        self.duracion = duracion
-        self.categoria = categoria
+    id: str
+    duracion: int
+    categoria: str
 
+@dataclass
 class Recurso:
-    def __init__(self, id_r: str, categorias: Set[str]):
-        self.id = id_r
-        self.categorias_soportadas = categorias
-        self.tiempo_disponible = 0  # Momento en que el recurso queda libre
+    id: str
+    categorias_soportadas: Set[str]
+    tiempo_disponible: int = 0  
 
-def cargar_datos() -> Tuple[List[Tarea], List[Recurso]]:
+def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos.txt') -> Tuple[List[Tarea], List[Recurso]]:
     """Lee los archivos de entrada y retorna las listas de objetos."""
     tareas: List[Tarea] = []
     recursos: List[Recurso] = []
     
     try:
-        # Cargar tareas.txt (ID, Duración, Categoría)
-        with open('tareas.txt', 'r', encoding='utf-8') as f:
+       
+        with open(ruta_tareas, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row:
-                    # row[0]: ID, row[1]: Duración, row[2]: Categoría
                     tareas.append(Tarea(row[0].strip(), int(row[1].strip()), row[2].strip()))
                     
-        # Cargar recursos.txt (ID, Categoría1, Categoría2, ...)
-        with open('recursos.txt', 'r', encoding='utf-8') as f:
+       
+        with open(ruta_recursos, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row:
-                    # row[0]: ID, row[1:]: Categorías soportadas
                     id_r = row[0].strip()
                     categorias = {cat.strip() for cat in row[1:]}
                     recursos.append(Recurso(id_r, categorias))
@@ -48,13 +46,8 @@ def cargar_datos() -> Tuple[List[Tarea], List[Recurso]]:
         
     return tareas, recursos
 
-def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[str]:
-    """
-    Asigna tareas a recursos minimizando el makespan usando la estrategia LPT:
-    1. Ordenar tareas por duración (mayor a menor).
-    2. Asignar cada tarea al recurso compatible que quede libre más pronto.
-    """
-    # Ordenar tareas de mayor a menor duración (Estrategia LPT)
+    # hacer estrategia LTP (Longest Task First) para minimizar el makespan
+
     tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
     
     asignaciones: List[str] = []
@@ -81,6 +74,18 @@ def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[st
         
     return asignaciones
 
+
+def guardar_resultados(ruta: str, resultado: List[str]) -> int:
+    makespan_max = 0
+    with open(ruta, 'w', encoding='utf-8') as f:
+        for linea in resultado:
+            f.write(linea + "\n")
+            # Extraer el tiempo de fin para calcular el makespan
+            tiempo_fin = int(linea.split(',')[-1])
+            if tiempo_fin > makespan_max:
+                makespan_max = tiempo_fin
+    return makespan_max
+    
 def main() -> None:
     # El programa debe recibir el makespan_objetivo como argumento
     if len(sys.argv) < 2:
@@ -99,13 +104,8 @@ def main() -> None:
     
     # Escribir output.txt (CSV sin encabezados, sin espacios innecesarios)
     try:
-        with open('output.txt', 'w', encoding='utf-8') as f:
-            for linea in resultado:
-                f.write(linea + "\n")
-        
-        # Calcular makespan final para informar al usuario
-        final_times = [int(linea.split(',')[-1]) for linea in resultado]
-        makespan_final = max(final_times) if final_times else 0
+        # Escribir output.txt usando la nueva función
+        makespan_final = guardar_resultados('output.txt', resultado)
         
         print(f"Planificación completada.")
         print(f"Makespan obtenido: {makespan_final}")
