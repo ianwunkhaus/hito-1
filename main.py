@@ -15,7 +15,7 @@ class Recurso:
     categorias_soportadas: Set[str]
     tiempo_disponible: int = 0  
 
-def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos.txt') -> Tuple[List[Tarea], List[Recurso]]:
+def cargar_datos(ruta_tareas: str = 'tareas_2.txt', ruta_recursos: str = 'recursos_2.txt') -> Tuple[List[Tarea], List[Recurso]]:
     #Lee los archivos de entrada y retorna las listas de objetos
     tareas: List[Tarea] = []
     recursos: List[Recurso] = []
@@ -58,7 +58,7 @@ def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[st
             print(f"Advertencia: No hay recursos compatibles para la tarea {t.id} ({t.categoria})")
             continue
 
-        elegido = min(usables, key=lambda r: r.tiempo_disponible)
+        elegido = min(usables, key=lambda r: (r.tiempo_disponible, len(r.categorias_soportadas))) #Da prioridad a recursos con pocas categorías
         inicio = elegido.tiempo_disponible
         fin = inicio + t.duracion
 
