@@ -3,6 +3,7 @@ import csv
 import time
 from typing import List, Set, Tuple
 from dataclasses import dataclass
+import random
 
 @dataclass
 class Tarea:
@@ -15,6 +16,15 @@ class Recurso:
     id: str
     categorias_soportadas: Set[str]
     tiempo_disponible: int = 0  
+
+def verificar(resultado, tareas):
+    tareas_ids = {t.id for t in tareas}
+    asignadas = {linea.split(',')[0] for linea in resultado}
+
+    if tareas_ids != asignadas:
+        print("Error: faltan tareas o hay duplicadas")
+    else:
+        print("✔ Todas las tareas asignadas correctamente")
 
 def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos.txt') -> Tuple[List[Tarea], List[Recurso]]:
     tareas: List[Tarea] = []
@@ -89,9 +99,7 @@ def main() -> None:
     
     tareas, recursos = cargar_datos()
 
-    # 🔥 LPT (ordenar antes de asignar)
-    tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
-
+    tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion) #primero los más cortos
     resultado = resolver_scheduling(tareas_ordenadas, recursos)
 
     try:
@@ -111,6 +119,8 @@ def main() -> None:
     fin_tiempo = time.time()      
     tiempo_total = fin_tiempo - inicio_tiempo
     print(f"Tiempo de ejecución: {tiempo_total:.4f} segundos")
+
+    verificar(resultado, tareas)
 
 if __name__ == "__main__":
     main()
