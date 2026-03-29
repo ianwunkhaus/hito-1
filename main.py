@@ -1,8 +1,9 @@
 import sys
 import csv
-from typing import List, Dict, Set, Tuple
+import time
+from typing import List, Set, Tuple
 from dataclasses import dataclass
-#ariel revisra: ltp, main, giardadp, codigo encoding, revision general
+
 @dataclass
 class Tarea:
     id: str
@@ -15,20 +16,17 @@ class Recurso:
     categorias_soportadas: Set[str]
     tiempo_disponible: int = 0  
 
-def cargar_datos(ruta_tareas: str = 'tareas_2.txt', ruta_recursos: str = 'recursos_2.txt') -> Tuple[List[Tarea], List[Recurso]]:
-    #Lee los archivos de entrada y retorna las listas de objetos
+def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos.txt') -> Tuple[List[Tarea], List[Recurso]]:
     tareas: List[Tarea] = []
     recursos: List[Recurso] = []
     
     try:
-       
         with open(ruta_tareas, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             for row in reader:
                 if row:
                     tareas.append(Tarea(row[0].strip(), int(row[1].strip()), row[2].strip()))
                     
-       
         with open(ruta_recursos, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             for row in reader:
@@ -47,46 +45,36 @@ def cargar_datos(ruta_tareas: str = 'tareas_2.txt', ruta_recursos: str = 'recurs
     return tareas, recursos
 
 def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[str]:
-    # hacer estrategia LTP (Longest Task First) para minimizar el makespan
-    #ariel revisar opciones de ltp
-    tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
-
     asignaciones: List[str] = []
-    for t in tareas_ordenadas:
-        usables = [r for r in recursos if t.categoria in r.categorias_soportadas]
-        if not usables:
-            print(f"Advertencia: No hay recursos compatibles para la tarea {t.id} ({t.categoria})")
-            continue
 
-        elegido = min(usables, key=lambda r: (r.tiempo_disponible, len(r.categorias_soportadas))) #Da prioridad a recursos con pocas categorías
+    for t in tareas:
+        usables = [r for r in recursos if t.categoria in r.categorias_soportadas]
+        
+        if not usables:
+            raise Exception(f"Tarea sin recurso compatible: {t.id}")
+
+        elegido = min(usables, key=lambda r: r.tiempo_disponible)
         inicio = elegido.tiempo_disponible
         fin = inicio + t.duracion
 
-#actualizar el recurso 
         elegido.tiempo_disponible = fin
         asignaciones.append(f"{t.id},{elegido.id},{inicio},{fin}")
+
     return asignaciones
 
-
-
-
-
-
 def guardar_resultados(ruta: str, resultado: List[str]) -> int:
-    #ariel revisar opciones de guardado
     makespan_max = 0
+
     with open(ruta, 'w', encoding='utf-8') as f:
         for linea in resultado:
             f.write(linea + "\n")
-            # Extraer el tiempo de fin para calcular el makespan
             tiempo_fin = int(linea.split(',')[-1])
             if tiempo_fin > makespan_max:
                 makespan_max = tiempo_fin
+
     return makespan_max
-    
+
 def main() -> None:
-    #ariel revisar opciones de main
-    # El programa debe recibir el makespan_objetivo como argumento
     if len(sys.argv) < 2:
         print("Uso: python main.py <makespan_objetivo>")
         return
@@ -97,24 +85,32 @@ def main() -> None:
         print("Error: El makespan objetivo debe ser un número.")
         return
 
-    # Cargar y Resolver
-    tareas, recursos = cargar_datos()
-    resultado = resolver_scheduling(tareas, recursos)
+    inicio_tiempo = time.time()
     
-    # Escribir output.txt (CSV sin encabezados, sin espacios innecesarios)
+    tareas, recursos = cargar_datos()
+
+    # 🔥 LPT (ordenar antes de asignar)
+    tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
+
+    resultado = resolver_scheduling(tareas_ordenadas, recursos)
+
     try:
-        # Escribir output.txt usando la nueva función
         makespan_final = guardar_resultados('output.txt', resultado)
         
         print(f"Planificación completada.")
         print(f"Makespan obtenido: {makespan_final}")
+        
         if makespan_final <= makespan_objetivo:
             print("¡Objetivo cumplido!")
         else:
             print(f"Aviso: El makespan ({makespan_final}) es mayor al objetivo ({makespan_objetivo}).")
-            
+
     except Exception as e:
         print(f"Error al escribir el archivo de salida: {e}")
+
+    fin_tiempo = time.time()      
+    tiempo_total = fin_tiempo - inicio_tiempo
+    print(f"Tiempo de ejecución: {tiempo_total:.4f} segundos")
 
 if __name__ == "__main__":
     main()
