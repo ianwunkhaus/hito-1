@@ -38,7 +38,7 @@ def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos
                 
     return tareas, recursos
 
-# 🔥 MEJORA CLAVE: mapa categoría → recursos
+
 def mapear_recursos_por_categoria(recursos: List[Recurso]) -> Dict[str, List[Recurso]]:
     mapa = defaultdict(list)
     for r in recursos:
@@ -91,10 +91,15 @@ def main() -> None:
 
     # Ordenar tareas (termina ganando LPT)
     tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True) #Primero las tareas más largas
+    #tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion) #primero los más cortos
+    #tareas_ordenadas = sorted(tareas,key=lambda x: len([r for r in recursos if x.categoria in r.categorias_soportadas])) #Primero las de pocos recursos
+    #tareas_ordenadas = sorted(tareas,key=lambda x: (len([r for r in recursos if x.categoria in r.categorias_soportadas]),-x.duracion)) #Primero las de pocos recursos y mayor duración
+    #tareas_ordenadas = tareas[:]
+    #random.shuffle(tareas_ordenadas) #aleatorio
     
 
 
-    # 🔥 crear mapa eficiente
+    # creación de mapa eficiente
     mapa_recursos = mapear_recursos_por_categoria(recursos)
 
     resultado, makespan_final = resolver_scheduling(tareas_ordenadas, mapa_recursos)
@@ -115,3 +120,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# Cambio para forzar el push al main
