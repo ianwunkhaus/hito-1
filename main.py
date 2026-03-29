@@ -1,8 +1,9 @@
 import sys
 import csv
 import time
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Dict
 from dataclasses import dataclass
+from collections import defaultdict
 
 @dataclass
 class Tarea:
@@ -20,59 +21,57 @@ def cargar_datos(ruta_tareas: str = 'tareas.txt', ruta_recursos: str = 'recursos
     tareas: List[Tarea] = []
     recursos: List[Recurso] = []
     
-    try:
-        with open(ruta_tareas, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if row:
-                    tareas.append(Tarea(row[0].strip(), int(row[1].strip()), row[2].strip()))
-                    
-        with open(ruta_recursos, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if row:
-                    id_r = row[0].strip()
-                    categorias = {cat.strip() for cat in row[1:]}
-                    recursos.append(Recurso(id_r, categorias))
-                    
-    except FileNotFoundError as e:
-        print(f"Error: No se encontró el archivo {e.filename}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error al leer los datos: {e}")
-        sys.exit(1)
-        
+    with open(ruta_tareas, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if row:
+                tareas.append(Tarea(row[0].strip(), int(row[1].strip()), row[2].strip()))
+                
+    with open(ruta_recursos, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if row:
+                id_r = row[0].strip()
+                categorias = {cat.strip() for cat in row[1:]}
+                recursos.append(Recurso(id_r, categorias))
+                
     return tareas, recursos
 
-def resolver_scheduling(tareas: List[Tarea], recursos: List[Recurso]) -> List[str]:
+# 🔥 MEJORA CLAVE: mapa categoría → recursos
+def mapear_recursos_por_categoria(recursos: List[Recurso]) -> Dict[str, List[Recurso]]:
+    mapa = defaultdict(list)
+    for r in recursos:
+        for cat in r.categorias_soportadas:
+            mapa[cat].append(r)
+    return mapa
+
+def resolver_scheduling(tareas: List[Tarea], mapa_recursos: Dict[str, List[Recurso]]) -> Tuple[List[str], int]:
     asignaciones: List[str] = []
+    makespan_max = 0
 
     for t in tareas:
-        usables = [r for r in recursos if t.categoria in r.categorias_soportadas]
+        usables = mapa_recursos.get(t.categoria, [])
         
         if not usables:
             raise Exception(f"Tarea sin recurso compatible: {t.id}")
 
+        # elegir recurso más libre
         elegido = min(usables, key=lambda r: r.tiempo_disponible)
+
         inicio = elegido.tiempo_disponible
         fin = inicio + t.duracion
 
         elegido.tiempo_disponible = fin
+        makespan_max = max(makespan_max, fin)
+
         asignaciones.append(f"{t.id},{elegido.id},{inicio},{fin}")
 
-    return asignaciones
+    return asignaciones, makespan_max
 
-def guardar_resultados(ruta: str, resultado: List[str]) -> int:
-    makespan_max = 0
-
+def guardar_resultados(ruta: str, resultado: List[str]) -> None:
     with open(ruta, 'w', encoding='utf-8') as f:
         for linea in resultado:
             f.write(linea + "\n")
-            tiempo_fin = int(linea.split(',')[-1])
-            if tiempo_fin > makespan_max:
-                makespan_max = tiempo_fin
-
-    return makespan_max
 
 def main() -> None:
     if len(sys.argv) < 2:
@@ -89,24 +88,23 @@ def main() -> None:
     
     tareas, recursos = cargar_datos()
 
-    # 🔥 LPT (ordenar antes de asignar)
+    # 🔥 ordenar tareas (LPT)
     tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
 
-    resultado = resolver_scheduling(tareas_ordenadas, recursos)
+    # 🔥 crear mapa eficiente
+    mapa_recursos = mapear_recursos_por_categoria(recursos)
 
-    try:
-        makespan_final = guardar_resultados('output.txt', resultado)
-        
-        print(f"Planificación completada.")
-        print(f"Makespan obtenido: {makespan_final}")
-        
-        if makespan_final <= makespan_objetivo:
-            print("¡Objetivo cumplido!")
-        else:
-            print(f"Aviso: El makespan ({makespan_final}) es mayor al objetivo ({makespan_objetivo}).")
+    resultado, makespan_final = resolver_scheduling(tareas_ordenadas, mapa_recursos)
 
-    except Exception as e:
-        print(f"Error al escribir el archivo de salida: {e}")
+    guardar_resultados('output.txt', resultado)
+    
+    print(f"Planificación completada.")
+    print(f"Makespan obtenido: {makespan_final}")
+    
+    if makespan_final <= makespan_objetivo:
+        print("¡Objetivo cumplido!")
+    else:
+        print(f"Aviso: El makespan ({makespan_final}) es mayor al objetivo ({makespan_objetivo}).")
 
     fin_tiempo = time.time()      
     tiempo_total = fin_tiempo - inicio_tiempo
