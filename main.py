@@ -1,6 +1,7 @@
 import sys
 import csv
 import time
+import random
 from typing import List, Set, Tuple, Dict
 from dataclasses import dataclass
 from collections import defaultdict
@@ -88,8 +89,10 @@ def main() -> None:
     
     tareas, recursos = cargar_datos()
 
-    # 🔥 ordenar tareas (LPT)
-    tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True)
+    # Ordenar tareas (termina ganando LPT)
+    tareas_ordenadas = sorted(tareas, key=lambda x: x.duracion, reverse=True) #Primero las tareas más largas
+    
+
 
     # 🔥 crear mapa eficiente
     mapa_recursos = mapear_recursos_por_categoria(recursos)
